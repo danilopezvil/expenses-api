@@ -82,12 +82,29 @@ expenses-api/
     │
     └── modules/
         └── expenses/
-            ├── domain/
-            │   ├── entities/       # Expense (AggregateRoot)
-            │   ├── value-objects/  # Money, ExpenseCategory
-            │   ├── ports/          # IExpenseRepository (interfaz — el puerto)
-            │   ├── services/       # ExpenseDomainService (splitEqually, assertOwnership)
-            │   └── events/         # ExpenseCreatedEvent, ExpenseUpdatedEvent
+            ├── domain/                        # Sin imports de NestJS / Prisma / libs externas
+            │   ├── entities/
+            │   │   ├── expense.entity.ts      # AggregateRoot — create/assign/void/classify
+            │   │   └── assignment.entity.ts   # % de reparto por miembro
+            │   ├── value-objects/
+            │   │   ├── money.vo.ts            # MoneyValidationError, add, multiply, formatted
+            │   │   ├── percentage.vo.ts       # (0,100], validateSum con tolerancia float
+            │   │   └── import-hash.vo.ts      # SHA-256 de 64 chars hex (Node crypto)
+            │   ├── ports/
+            │   │   └── expense-repository.port.ts  # IExpenseRepository + ExpenseFilters
+            │   ├── services/
+            │   │   ├── text-import-parser.service.ts  # "DD/MM | desc | amount", coma decimal
+            │   │   └── expense-grouper.service.ts     # merge con herencia de assignments
+            │   ├── events/
+            │   │   ├── expense-created.event.ts
+            │   │   ├── expense-assigned.event.ts
+            │   │   └── expense-imported.event.ts
+            │   └── __tests__/                 # 49 tests — sin dependencias de framework
+            │       ├── money.vo.spec.ts
+            │       ├── percentage.vo.spec.ts
+            │       ├── text-import-parser.spec.ts
+            │       ├── expense-grouper.spec.ts
+            │       └── expense.entity.spec.ts
             ├── application/
             │   ├── use-cases/      # Create/Get/Update/Delete — retornan Result<T,E>
             │   ├── queries/        # ListExpensesQuery (read model directo a Prisma)
@@ -128,6 +145,42 @@ expenses-api/
 **Regla de dependencias:** las capas internas no conocen a las externas. El dominio no importa nada de NestJS, Prisma ni Express.
 
 ---
+
+## Domain layer — reglas de la capa
+
+- **Cero imports** de NestJS, Prisma o cualquier librería externa
+- Las entidades usan **constructor privado** + factory estático `create()` que retorna `Result<T, E>`
+- Los value objects son **inmutables** (props congelados en `ValueObject<T>`) y validan en el constructor
+- Los domain services son **clases puras** sin decoradores
+- Los errores de dominio son **typed** (`MoneyValidationError extends ValidationError`) para poder capturarlos específicamente en los use-cases
+
+### Enums de Expense
+
+| Enum | Valores |
+|------|---------|
+| `ExpenseSource` | `MANUAL`, `IMPORTED` |
+| `ExpenseStatus` | `PENDING`, `IMPORTED`, `CLASSIFIED`, `VOIDED` |
+
+### Flujo de estados
+
+```
+PENDING ──classify()──► CLASSIFIED
+IMPORTED ─classify()──► CLASSIFIED
+PENDING/IMPORTED/CLASSIFIED ──void()──► VOIDED  (irreversible)
+```
+
+### TextImportParserService — formato de línea
+
+```
+DD/MM | descripción | importe
+15/03 | Supermercado | 85,50
+```
+
+- Separador: ` | ` (espacio-pipe-espacio)
+- Fecha: `DD/MM` — el año se pasa como parámetro
+- Importe: punto **o** coma como separador decimal
+- Líneas vacías y que empiecen por `#` → ignoradas silenciosamente
+- Errores de parseo → `ParseError[]`, nunca excepciones
 
 ## Pattern Result\<T, E\>
 
@@ -204,8 +257,11 @@ npm run migrate:deploy # Aplicar migraciones en producción (sin generar)
 npm run seed           # Poblar BD con datos de ejemplo
 npm run prisma:studio  # Abrir Prisma Studio
 npm run lint           # ESLint con autofix
-npm run test           # Jest unit tests
+npm run test           # Jest — todos los tests
 npm run test:cov       # Jest con cobertura
+
+# Solo domain layer (rápido, sin framework, < 10 s)
+node_modules/.bin/jest --testPathPatterns=domain --no-coverage
 ```
 
 ---
