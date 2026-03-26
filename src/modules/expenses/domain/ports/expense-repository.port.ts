@@ -31,4 +31,9 @@ export interface IExpenseRepository {
   save(expense: Expense): Promise<void>;
   saveMany(expenses: Expense[]): Promise<void>;
   delete(id: string): Promise<void>;
+  /**
+   * Atomic: deletes `deletedIds` and saves `newExpense` in a single transaction.
+   * Used by GroupExpensesUseCase.
+   */
+  replaceWithGrouped(deletedIds: string[], newExpense: Expense): Promise<void>;
 }
