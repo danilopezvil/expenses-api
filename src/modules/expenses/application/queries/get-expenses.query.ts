@@ -40,7 +40,7 @@ export class GetExpensesQuery {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { _count: { select: { splits: true } } },
+        include: { _count: { select: { assignments: true } } },
       }),
       this.prisma.expense.count({ where }),
     ]);
@@ -49,17 +49,17 @@ export class GetExpensesQuery {
       data: raws.map((r) => ({
         id: r.id,
         groupId: r.groupId ?? '',
-        accountId: r.groupId ?? undefined, // TODO: map accountId after migration
-        categoryId: r.category ?? undefined,
-        description: r.title,
+        accountId: r.accountId ?? undefined,
+        categoryId: r.categoryId ?? undefined,
+        description: r.description,
         amount: Number(r.amount),
         currency: r.currency,
-        source: 'MANUAL' as ExpenseListItemDto['source'], // TODO: map after migration
-        status: 'PENDING' as ExpenseListItemDto['status'], // TODO: map after migration
-        date: r.createdAt,
-        month: String(r.createdAt.getMonth() + 1).padStart(2, '0'),
-        year: String(r.createdAt.getFullYear()),
-        assignmentCount: r._count.splits,
+        source: r.source as ExpenseListItemDto['source'],
+        status: r.status as ExpenseListItemDto['status'],
+        date: r.date,
+        month: r.month,
+        year: r.year,
+        assignmentCount: r._count.assignments,
       })),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };

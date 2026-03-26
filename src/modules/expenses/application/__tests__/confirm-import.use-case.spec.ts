@@ -33,7 +33,7 @@ function makeExistingExpense(): Expense {
     groupId: 'group-1',
     description: 'Supermercado',
     amount: Money.create(85.5, 'USD'),
-    source: ExpenseSource.IMPORTED,
+    source: ExpenseSource.CARD,
     status: ExpenseStatus.IMPORTED,
     importHash: ImportHash.fromRaw('15/03', 'Supermercado', '85.5', 'group-1'),
     date: new Date('2024-03-15'),
@@ -78,7 +78,7 @@ describe('ConfirmImportUseCase', () => {
     expect(result.value.skipped).toBe(0);
     expect(result.value.parseErrors).toBe(0);
     expect(repo.saveMany).toHaveBeenCalledWith(expect.arrayContaining([
-      expect.objectContaining({ source: ExpenseSource.IMPORTED, status: ExpenseStatus.IMPORTED }),
+      expect.objectContaining({ source: ExpenseSource.CARD, status: ExpenseStatus.IMPORTED }),
     ]));
   });
 

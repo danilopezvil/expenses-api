@@ -19,7 +19,7 @@ export class GetDashboardQuery {
     const [expenses, aggregate] = await this.prisma.$transaction([
       this.prisma.expense.findMany({
         where,
-        include: { splits: true },
+        include: { assignments: true },
         orderBy: { amount: 'desc' },
         take: 5,
       }),
@@ -53,7 +53,7 @@ export class GetDashboardQuery {
       );
 
     const unassigned = await this.prisma.expense.count({
-      where: { ...where, splits: { none: {} } },
+      where: { ...where, assignments: { none: {} } },
     });
 
     return {
@@ -66,7 +66,7 @@ export class GetDashboardQuery {
       unassigned,
       topExpenses: expenses.map((e) => ({
         id: e.id,
-        description: e.title,
+        description: e.description,
         amount: Number(e.amount),
         currency: e.currency,
         date: e.createdAt,

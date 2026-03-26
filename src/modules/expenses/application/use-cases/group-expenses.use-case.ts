@@ -49,7 +49,7 @@ export class GroupExpensesUseCase {
       accountId: dto.accountId,
       description: dto.description,
       amount: groupedMoney,
-      source: ExpenseSource.MANUAL,
+      source: ExpenseSource.CARD,
       date: new Date(),
     });
     if (newExpenseResult.isErr()) return newExpenseResult;

@@ -10,7 +10,7 @@ const baseInput = () => ({
   groupId: 'group-1',
   description: 'Groceries',
   amount: Money.create(100, 'USD'),
-  source: ExpenseSource.MANUAL,
+  source: ExpenseSource.CARD,
   date: new Date(2024, 2, 15),
 });
 

@@ -10,33 +10,60 @@ datasource db {
 // ─── Enums ────────────────────────────────────────────────────────────────────
 
 enum GroupRole {
-  ADMIN
-  MEMBER
+  GROUP_ADMIN
+  GROUP_MEMBER
+  GROUP_VIEWER
 }
 
-enum ExpenseCategory {
-  FOOD
-  TRANSPORT
-  ACCOMMODATION
-  ENTERTAINMENT
-  HEALTH
-  UTILITIES
-  SHOPPING
-  OTHER
+enum ExpenseStatus {
+  PENDING
+  CLASSIFIED
+  ASSIGNED
+  VOIDED
+  IMPORTED
+}
+
+enum ExpenseSource {
+  CARD
+  CASH
+  TRANSFER
+  DIGITAL_WALLET
+}
+
+enum AccountType {
+  CREDIT_CARD
+  DEBIT
+  CASH
+  TRANSFER
+  DIGITAL_WALLET
+  SHARED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  REGISTER
+  IMPORT
+  EXPORT
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────────
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  name      String
-  password  String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
-  expenses     Expense[]
-  groupMembers GroupMember[]
+  memberships   GroupMembership[]
+  members       Member[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
 
   @@map("users")
 }
@@ -45,57 +72,216 @@ model Group {
   id          String   @id @default(uuid())
   name        String
   description String?
+  currency    String   @default("USD")
+  active      Boolean  @default(true)
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  members  GroupMember[]
-  expenses Expense[]
+  memberships GroupMembership[]
+  members     Member[]
+  accounts    Account[]
+  expenses    Expense[]
+  payments    Payment[]
+  categories  Category[]
+  imports     Import[]
+  exports     Export[]
 
   @@map("groups")
 }
 
-model GroupMember {
+model GroupMembership {
   id       String    @id @default(uuid())
   userId   String    @map("user_id")
   groupId  String    @map("group_id")
-  role     GroupRole @default(MEMBER)
+  role     GroupRole @default(GROUP_MEMBER)
+  active   Boolean   @default(true)
   joinedAt DateTime  @default(now()) @map("joined_at")
 
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
 
   @@unique([userId, groupId])
-  @@map("group_members")
+  @@map("group_memberships")
+}
+
+model Member {
+  id        String   @id @default(uuid())
+  groupId   String   @map("group_id")
+  userId    String?  @map("user_id")
+  name      String
+  color     String   @default("#6366f1")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  group       Group        @relation(fields: [groupId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id])
+  assignments Assignment[]
+  payments    Payment[]
+
+  @@unique([groupId, name])
+  @@map("members")
+}
+
+model Account {
+  id        String      @id @default(uuid())
+  groupId   String      @map("group_id")
+  name      String
+  holder    String?
+  type      AccountType @default(CREDIT_CARD)
+  currency  String      @default("USD")
+  active    Boolean     @default(true)
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  group    Group     @relation(fields: [groupId], references: [id])
+  expenses Expense[]
+
+  @@unique([groupId, name])
+  @@map("accounts")
 }
 
 model Expense {
-  id          String          @id @default(uuid())
-  title       String
-  description String?
-  amount      Decimal         @db.Decimal(12, 2)
-  currency    String          @default("USD")
-  category    ExpenseCategory @default(OTHER)
-  paidById    String          @map("paid_by_id")
-  groupId     String?         @map("group_id")
-  createdAt   DateTime        @default(now()) @map("created_at")
-  updatedAt   DateTime        @updatedAt @map("updated_at")
+  id          String        @id @default(uuid())
+  groupId     String        @map("group_id")
+  accountId   String?       @map("account_id")
+  categoryId  String?       @map("category_id")
+  description String
+  amount      Decimal       @db.Decimal(12, 2)
+  currency    String        @default("USD")
+  source      ExpenseSource @default(CARD)
+  status      ExpenseStatus @default(PENDING)
+  date        DateTime
+  month       String        @db.Char(2)
+  year        String        @db.Char(4)
+  importHash  String?       @unique @map("import_hash")
+  importId    String?       @map("import_id")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
 
-  paidBy User   @relation(fields: [paidById], references: [id])
-  group  Group? @relation(fields: [groupId], references: [id])
-  splits ExpenseSplit[]
+  group       Group        @relation(fields: [groupId], references: [id])
+  account     Account?     @relation(fields: [accountId], references: [id])
+  category    Category?    @relation(fields: [categoryId], references: [id])
+  import      Import?      @relation(fields: [importId], references: [id])
+  assignments Assignment[]
 
+  @@index([groupId, date])
+  @@index([accountId])
+  @@index([importHash])
   @@map("expenses")
 }
 
-model ExpenseSplit {
-  id        String  @id @default(uuid())
-  expenseId String  @map("expense_id")
-  userId    String  @map("user_id")
-  amount    Decimal @db.Decimal(12, 2)
-  settled   Boolean @default(false)
+model Assignment {
+  id         String  @id @default(uuid())
+  expenseId  String  @map("expense_id")
+  memberId   String  @map("member_id")
+  percentage Decimal @db.Decimal(5, 2)
 
   expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  member  Member  @relation(fields: [memberId], references: [id], onDelete: Cascade)
 
-  @@unique([expenseId, userId])
-  @@map("expense_splits")
+  @@unique([expenseId, memberId])
+  @@index([expenseId])
+  @@index([memberId])
+  @@map("assignments")
+}
+
+model Category {
+  id       String  @id @default(uuid())
+  groupId  String? @map("group_id")
+  parentId String? @map("parent_id")
+  name     String
+  icon     String  @default("📦")
+  active   Boolean @default(true)
+
+  group    Group?     @relation(fields: [groupId], references: [id])
+  parent   Category?  @relation("Subcategories", fields: [parentId], references: [id])
+  children Category[] @relation("Subcategories")
+  expenses Expense[]
+
+  @@unique([groupId, name])
+  @@map("categories")
+}
+
+model Payment {
+  id       String   @id @default(uuid())
+  groupId  String   @map("group_id")
+  memberId String   @map("member_id")
+  month    String   @db.Char(2)
+  year     String   @db.Char(4)
+  amount   Decimal  @db.Decimal(12, 2)
+  note     String?
+  paidAt   DateTime @default(now()) @map("paid_at")
+
+  group  Group  @relation(fields: [groupId], references: [id])
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Import {
+  id            String   @id @default(uuid())
+  groupId       String   @map("group_id")
+  rawText       String   @map("raw_text")
+  totalParsed   Int      @default(0) @map("total_parsed")
+  totalInserted Int      @default(0) @map("total_inserted")
+  totalSkipped  Int      @default(0) @map("total_skipped")
+  totalErrors   Int      @default(0) @map("total_errors")
+  status        String   @default("COMPLETED")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  group    Group     @relation(fields: [groupId], references: [id])
+  expenses Expense[]
+
+  @@map("imports")
+}
+
+model Export {
+  id        String   @id @default(uuid())
+  groupId   String   @map("group_id")
+  filters   Json
+  fileSize  Int?     @map("file_size")
+  status    String   @default("COMPLETED")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  group Group @relation(fields: [groupId], references: [id])
+
+  @@map("exports")
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String?     @map("user_id")
+  action     AuditAction
+  entityType String      @map("entity_type")
+  entityId   String      @map("entity_id")
+  before     Json?
+  after      Json?
+  ipAddress  String?     @map("ip_address")
+  userAgent  String?     @map("user_agent")
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([userId, createdAt])
+  @@map("audit_logs")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  tokenHash String   @unique @map("token_hash")
+  revoked   Boolean  @default(false)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("refresh_tokens")
+}
+
+model Settings {
+  key   String @id
+  value String
+
+  @@map("settings")
 }

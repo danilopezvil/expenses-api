@@ -29,7 +29,7 @@ function makeExpense(
     groupId: 'group-1',
     description: `Expense ${id}`,
     amount: Money.create(amount, 'USD'),
-    source: ExpenseSource.MANUAL,
+    source: ExpenseSource.CARD,
     status: ExpenseStatus.PENDING,
     date: new Date('2024-03-15'),
     month: '03',

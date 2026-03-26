@@ -10,7 +10,7 @@ const makeExpense = (id: string, groupId: string, amount: number) =>
     groupId,
     description: `Expense ${id}`,
     amount: Money.create(amount, 'USD'),
-    source: ExpenseSource.MANUAL,
+    source: ExpenseSource.CARD,
     date: new Date(2024, 0, 1),
   }).getOrThrow();
 

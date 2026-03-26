@@ -49,7 +49,7 @@ export class ConfirmImportUseCase {
         groupId: dto.groupId,
         description: line.description,
         amount: line.amount,
-        source: ExpenseSource.IMPORTED,
+        source: ExpenseSource.CARD,
         status: ExpenseStatus.IMPORTED,
         importHash: line.hash,
         date: line.date,

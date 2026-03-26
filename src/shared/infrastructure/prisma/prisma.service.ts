@@ -1,4 +1,5 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '@prisma/client';
 
 const RETRY_ATTEMPTS = 8;
@@ -7,6 +8,16 @@ const RETRY_DELAY_MS = 3_000;
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(PrismaService.name);
+
+  constructor(config: ConfigService) {
+    const url = config.getOrThrow<string>('DATABASE_URL');
+    //console.log('>>> DATABASE_URL:', url); // log temporal
+    super({
+      datasources: {
+        db: { url: config.getOrThrow<string>('DATABASE_URL') },
+      },
+    });
+  }
 
   async onModuleInit(): Promise<void> {
     await this.connectWithRetry();

@@ -9,15 +9,18 @@ import { ExpenseCreatedEvent } from '../events/expense-created.event';
 import { ExpenseAssignedEvent } from '../events/expense-assigned.event';
 
 export enum ExpenseSource {
-  MANUAL = 'MANUAL',
-  IMPORTED = 'IMPORTED',
+  CARD = 'CARD',
+  CASH = 'CASH',
+  TRANSFER = 'TRANSFER',
+  DIGITAL_WALLET = 'DIGITAL_WALLET',
 }
 
 export enum ExpenseStatus {
   PENDING = 'PENDING',
-  IMPORTED = 'IMPORTED',
   CLASSIFIED = 'CLASSIFIED',
+  ASSIGNED = 'ASSIGNED',
   VOIDED = 'VOIDED',
+  IMPORTED = 'IMPORTED',
 }
 
 export interface ExpenseProps {

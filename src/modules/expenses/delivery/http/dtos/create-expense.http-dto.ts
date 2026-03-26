@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsDateString,
+  IsEnum,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -9,12 +10,9 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { ExpenseSource } from '../../../domain/entities/expense.entity';
 
 export class CreateExpenseHttpDto {
-  @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440001' })
-  @IsUUID()
-  groupId!: string;
-
   @ApiPropertyOptional({ example: '550e8400-e29b-41d4-a716-446655440002' })
   @IsOptional()
   @IsUUID()
@@ -35,6 +33,11 @@ export class CreateExpenseHttpDto {
   @IsOptional()
   @IsString()
   currency?: string;
+
+  @ApiPropertyOptional({ enum: ExpenseSource })
+  @IsOptional()
+  @IsEnum(ExpenseSource)
+  source?: ExpenseSource;
 
   @ApiProperty({ example: '2024-03-15' })
   @IsDateString()

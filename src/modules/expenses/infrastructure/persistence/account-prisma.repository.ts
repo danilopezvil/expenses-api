@@ -1,17 +1,33 @@
-// TODO: Requires Account table in Prisma schema (post-migration).
-// This stub satisfies DI wiring — all methods throw until the schema migration is applied.
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../../shared/infrastructure/prisma/prisma.service';
 import { IAccountRepository, AccountInfo } from '../../domain/ports/account-repository.port';
 
 @Injectable()
 export class AccountPrismaRepository implements IAccountRepository {
-  async findById(_id: string): Promise<AccountInfo | null> {
-    // TODO: implement after Account model is added to Prisma schema
-    return null;
+  constructor(private readonly prisma: PrismaService) {}
+
+  async findById(id: string): Promise<AccountInfo | null> {
+    const raw = await this.prisma.account.findUnique({ where: { id } });
+    if (!raw) return null;
+    return {
+      id: raw.id,
+      groupId: raw.groupId,
+      name: raw.name,
+      // memberId link does not exist in the Account model yet (post-migration TODO)
+      memberId: undefined,
+    };
   }
 
-  async findByGroupId(_groupId: string): Promise<AccountInfo[]> {
-    // TODO: implement after Account model is added to Prisma schema
-    return [];
+  async findByGroupId(groupId: string): Promise<AccountInfo[]> {
+    const raws = await this.prisma.account.findMany({
+      where: { groupId, active: true },
+      orderBy: { name: 'asc' },
+    });
+    return raws.map((r) => ({
+      id: r.id,
+      groupId: r.groupId,
+      name: r.name,
+      memberId: undefined,
+    }));
   }
 }

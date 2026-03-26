@@ -20,7 +20,7 @@ export class GroupMemberGuard implements CanActivate {
       throw new ForbiddenException('Access denied');
     }
 
-    const member = await this.prisma.groupMember.findUnique({
+    const member = await this.prisma.groupMembership.findUnique({
       where: { userId_groupId: { userId, groupId } },
     });
 

@@ -47,7 +47,7 @@ export class CreateExpenseUseCase {
       accountId: dto.accountId,
       description: dto.description,
       amount: money,
-      source: dto.source ?? ExpenseSource.MANUAL,
+      source: dto.source ?? ExpenseSource.CARD,
       date: dto.date instanceof Date ? dto.date : new Date(dto.date),
     });
     if (expenseResult.isErr()) return expenseResult;

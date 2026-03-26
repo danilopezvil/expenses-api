@@ -14,7 +14,7 @@ function makeExpense(overrides: Partial<Parameters<typeof Expense.reconstitute>[
     groupId: 'group-1',
     description: 'Test expense',
     amount: Money.create(100, 'USD'),
-    source: ExpenseSource.MANUAL,
+    source: ExpenseSource.CARD,
     status: ExpenseStatus.PENDING,
     date: new Date('2024-03-15'),
     month: '03',
