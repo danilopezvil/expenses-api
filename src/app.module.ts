@@ -5,6 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from './shared/infrastructure/prisma/prisma.module';
+import { AuditModule } from './shared/infrastructure/audit/audit.module';
 import { JwtStrategy } from './shared/infrastructure/strategies/jwt.strategy';
 
 // Feature modules
@@ -56,6 +57,7 @@ import { DashboardModule } from './modules/dashboard/delivery/http/dashboard.mod
     }),
 
     PrismaModule,
+    AuditModule,
 
     // Feature modules
     AuthModule,

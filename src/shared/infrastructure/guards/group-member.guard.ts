@@ -1,33 +1,41 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { Request } from 'express';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  GROUP_MEMBERSHIP_REPOSITORY_PORT,
+  GroupMembershipRecord,
+  IGroupMembershipRepository,
+} from '../../domain/ports/group-membership-repository.port';
 
 interface AuthenticatedRequest extends Request {
   user: { id: string };
   params: { groupId?: string } & Record<string, string>;
+  groupMembership?: GroupMembershipRecord;
 }
 
 @Injectable()
 export class GroupMemberGuard implements CanActivate {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    @Inject(GROUP_MEMBERSHIP_REPOSITORY_PORT)
+    private readonly membershipRepo: IGroupMembershipRepository,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     const userId = request.user?.id;
     const groupId = request.params['groupId'];
 
-    if (!userId || !groupId) {
-      throw new ForbiddenException('Access denied');
-    }
+    if (!userId || !groupId) throw new ForbiddenException();
 
-    const member = await this.prisma.groupMembership.findUnique({
-      where: { userId_groupId: { userId, groupId } },
-    });
+    const membership = await this.membershipRepo.findActiveByUserAndGroup(userId, groupId);
+    if (!membership) throw new ForbiddenException('Not a member of this group');
 
-    if (!member) {
-      throw new ForbiddenException('You are not a member of this group');
-    }
-
+    request.groupMembership = membership;
     return true;
   }
 }

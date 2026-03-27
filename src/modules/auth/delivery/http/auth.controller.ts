@@ -45,8 +45,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiOkResponse()
-  async loginHandler(@Body() dto: LoginHttpDto) {
-    const result = await this.login.execute(dto);
+  async loginHandler(@Body() dto: LoginHttpDto, @Request() req: ExpressRequest) {
+    const result = await this.login.execute({ ...dto, ipAddress: req.ip });
     if (result.isErr()) throw result.error;
     return result.value;
   }

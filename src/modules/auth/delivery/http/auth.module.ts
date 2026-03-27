@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { CqrsModule } from '@nestjs/cqrs';
 import { AuthController } from './auth.controller';
 
 // Application
@@ -10,6 +11,9 @@ import { RegisterUseCase } from '../../application/use-cases/register.use-case';
 import { LoginUseCase } from '../../application/use-cases/login.use-case';
 import { RefreshTokenUseCase } from '../../application/use-cases/refresh-token.use-case';
 import { LogoutUseCase } from '../../application/use-cases/logout.use-case';
+
+// Event handlers
+import { UserLoggedInHandler } from '../../application/event-handlers/user-logged-in.handler';
 
 // Infrastructure
 import { PrismaUserRepository } from '../../infrastructure/persistence/prisma-user.repository';
@@ -26,6 +30,7 @@ import {
   imports: [
     PassportModule,
     ConfigModule,
+    CqrsModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -42,6 +47,9 @@ import {
     LoginUseCase,
     RefreshTokenUseCase,
     LogoutUseCase,
+
+    // Event handlers
+    UserLoggedInHandler,
 
     // Infrastructure
     JwtRefreshStrategy,

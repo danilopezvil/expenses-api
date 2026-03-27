@@ -19,6 +19,10 @@ import { GetExpenseQuery } from '../../application/queries/get-expense.query';
 import { TextImportParserService } from '../../domain/services/text-import-parser.service';
 import { ExpenseGrouperService } from '../../domain/services/expense-grouper.service';
 
+// Event handlers
+import { ExpenseAssignedHandler } from '../../application/event-handlers/expense-assigned.handler';
+import { ExpenseImportedHandler } from '../../application/event-handlers/expense-imported.handler';
+
 // Injection tokens
 import {
   EXPENSE_REPOSITORY_PORT,
@@ -54,6 +58,10 @@ import { GroupMemberGuard } from '../../../../shared/infrastructure/guards/group
     // Queries
     GetExpensesQuery,
     GetExpenseQuery,
+
+    // Event handlers
+    ExpenseAssignedHandler,
+    ExpenseImportedHandler,
 
     // Guards
     GroupMemberGuard,

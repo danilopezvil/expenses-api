@@ -19,4 +19,5 @@ export interface RegisterAppDto {
 export interface LoginAppDto {
   email: string;
   password: string;
+  ipAddress?: string;
 }
