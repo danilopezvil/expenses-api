@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -19,6 +20,7 @@ import { RefreshHttpDto } from './dtos/refresh.http-dto';
 import { JwtAuthGuard } from '../../../../shared/infrastructure/guards/jwt-auth.guard';
 import { JwtRefreshGuard } from '../../../../shared/infrastructure/guards/jwt-refresh.guard';
 import { RefreshTokenPayload } from '../../infrastructure/jwt/jwt-refresh.strategy';
+import { CurrentUser, CurrentUserPayload } from '../../../../shared/infrastructure/decorators/current-user.decorator';
 
 @ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })
@@ -69,5 +71,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Revoke a refresh token' })
   async logoutHandler(@Body() dto: RefreshHttpDto) {
     await this.logout.execute(dto.refreshToken);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current authenticated user' })
+  @ApiOkResponse()
+  async me(@CurrentUser() user: CurrentUserPayload) {
+    return user;
   }
 }
